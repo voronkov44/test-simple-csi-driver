@@ -245,7 +245,7 @@ spec:
 - Монтирует том из PVC simple-pvc в директорию /data внутри контейнера
 
 
-#### main.go
+#### 7. main.go
 ```go
 package main
 
@@ -324,8 +324,84 @@ CMD ["/app/driver"]                # Запуск драйвера
 
 - Основной этап копирует бинарник и создаёт директорию для сокета
 
+Общая схема:
+
+<img src="https://github.com/user-attachments/assets/fd1562e8-a00c-499c-b9b2-edcfa700595d" width="200" alt="Общая схема">
 
 
 
+## Deploy csi-driver
 
+#### 1. Сборка Docker-образа
+```bash
+docker build -t f1lzz/test-simple-csi-driver:v0.1 .
+```
+
+После сборки проверяем наш образ следующей командой
+```bash
+docker images
+```
+
+Ожидаемый вывод (IMAGE ID будет различаться):
+
+
+| REPOSITORY    | TAG        | IMAGE ID           |  CREATED          |  SIZE  | 
+| :-----------: |:----------:| :----------------: | :---------------: | :----: |
+| f1lzz/test-simple-csi-driver     | v0.1         | 80e32ad3s342       | About an hour ago | 18.3MB |
+
+#### 2. Применение манифестов (важен порядок)
+```bash
+kubectl apply -f csi-driver.yaml
+kubectl apply -f storage-class.yaml
+kubectl apply -f daemonset.yaml
+kubectl apply -f persistent-volume.yaml
+kubectl apply -f persistent-volume-claim.yaml
+kubectl apply -f test-pod.yaml
+```
+#### 3. Проверка работы компонентов
+
+Проверка DaemonSet(должен быть в статусе running):
+
+```bash
+kubectl -n kube-system get pods -l app=simple-csi-node
+```
+
+Ожидаемый вывод (NAME будет различаться):
+
+| NAME    | READY        | STATUS           |  RESTARTS        |  AGE  | 
+| :-----------: |:----------:| :----------------: | :---------------: | :----: |
+| simple-csi-node-abc12     | 1/1         | Running       | 0 | 1m |
+
+
+Проверка CSI-драйвера:
+
+```bash
+kubectl get csidrivers.storage.k8s.io
+```
+
+Ожидаемый вывод:
+
+| NAME    | ATTACHREQUIRED        | PODINFOONMOUNT           |  STORAGECAPACITY       |  TOKENREQUESTS  |  REQUIRESREPUBLISH |  MODES  | AGE | 
+| :-----------: |:----------:| :----------------: | :---------------: | :----: | :----: |  :----: |  :----: |
+| simple.csi.driver     | false        | true       |  false | (unset) |false |Persistent |1m |
+
+
+#### 4. Проверка PV и PVC
+```bash
+kubectl get pv
+kubectl get pvc
+```
+PV и PVC должны быть связаны(статус Bound)
+
+Ожидаемый вывод для pv:
+
+| NAME    | CAPACITY        | ACCESS MODES           |  RECLAIM POLICY       |  STATUS  |  CLAIM |  STORAGECLASS  | VOLUMEATTRIBUTESCLASS | AGE | 
+| :-----------: |:----------:| :----------------: | :---------------: | :----: | :----: |  :----: |  :----: |  :----: |
+| simple-pv    | 1Gi       | RWO      |  Retain | Bound |default/simple-pvc | simple-storage-class |(unset) | 1m |
+
+Ожидаемый вывод для pvc:
+
+| NAME    | STATUS        | VOLUME        |  CAPACITY      |  ACCESS MODES |  STORAGECLASS |  VOLUMEATTRIBUTESCLASS  | AGE | 
+| :-----------: |:----------:| :----------------: | :---------------: | :----: | :----: |  :----: |  :----: |
+| simple-pvc    | Bound        | simple-pv      |  1Gi	| RWO  | simple-storage-class | (unset) |1m |
 
