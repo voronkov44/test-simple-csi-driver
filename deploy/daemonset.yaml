@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: simple-csi-node
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: simple-csi-node
+  template:
+    metadata:
+      labels:
+        app: simple-csi-node
+    spec:
+      containers:
+        - name: simple-csi-driver
+          image: f1lzz/test-simple-csi-driver:v0.1
+          imagePullPolicy: Always #kubelet перед запуском проверяет в реестре свежую версию
+          command:
+            - "/app/driver"
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+      volumes:
+        - name: socket-dir
+          hostPath:
+            path: /tmp/simple.csi.driver
+            type: DirectoryOrCreate

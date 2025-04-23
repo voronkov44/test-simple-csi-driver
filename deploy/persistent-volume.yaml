@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: simple-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: simple-storage-class
+  csi:
+    driver: simple.csi.driver
+    volumeHandle: simple-volume-handle
+  persistentVolumeReclaimPolicy: Retain
