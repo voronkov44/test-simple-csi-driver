@@ -36,8 +36,8 @@ func main() {
 		log.Println("Got connection")
 
 		// Минимальная эмуляция монтирования
-		src := "/Users/f1lzz/volumes/test-volume"
-		target := "/Users/f1lzz/volumes/test-volume"
+		src := "/mnt/data"
+		target := "/mnt/data"
 
 		cmd := exec.Command("mount", "-t", "nullfs", src, target)
 		out, err := cmd.CombinedOutput()
